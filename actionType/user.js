@@ -1,0 +1,2 @@
+export const SET_USER_DATA = "SET_USER_DATA"
+export const TAKE_NEW_MEDICINE = "TAKE_NEW_MEDICINE"

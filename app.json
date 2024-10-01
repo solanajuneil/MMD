@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "Pratice1",
+    "name": "MMD",
     "slug": "Pratice1",
+    "displayName": "MMD",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -13,13 +14,17 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.solanajuneil.Pratice1"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.solanajuneil.Pratice1",
+       "googleServicesFile": "./google-services.json"
+
     },
     "web": {
       "bundler": "metro",
@@ -27,10 +32,25 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "packagerOpts": {
+      "sourceExts": [
+        "cjs"
+      ]
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "7a8aebc2-96a3-48fe-ba43-e57f349b31c2"
+      }
+    },
+    "owner": "solanajuneil"
   }
 }
