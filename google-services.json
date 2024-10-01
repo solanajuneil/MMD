@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1008403820783",
+    "project_id": "myapp-8528a",
+    "storage_bucket": "myapp-8528a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1008403820783:android:b962127f52d7c432d76b1a",
+        "android_client_info": {
+          "package_name": "com.solanajuneil.Pratice1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBm01duhLWbmb-QFxbO4HUvOHJxEqVa8sQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
