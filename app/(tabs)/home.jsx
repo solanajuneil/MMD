@@ -43,13 +43,13 @@ const home = () => {
     : [];
   
   
-//   useEffect(() => {
-//   const intervalId = setInterval(() => {
-//     checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
-//   }, 60 * 1000); 
+  useEffect(() => {
+  const intervalId = setInterval(() => {
+    checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
+  }, 23 * 60 * 60 * 1000); 
     
-//   return () => clearInterval(intervalId);
-// }, [intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn]);
+  return () => clearInterval(intervalId);
+}, [intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn]);
 
 // useEffect(() => {
 //   const calculateTimeUntilNext11PM = () => {
@@ -136,7 +136,7 @@ useEffect(() => {
     
     // **** REMOVE COMMENTS FOR DEBUGGING ****
     //  Notifications.cancelAllScheduledNotificationsAsync().then(response => console.log(response))
-   Notifications.getAllScheduledNotificationsAsync().then(response => console.log(response));
+  //  Notifications.getAllScheduledNotificationsAsync().then(response => console.log(response));
 
     return () => {
       Notifications.removeNotificationSubscription(responseListener.current);
