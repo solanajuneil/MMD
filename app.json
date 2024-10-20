@@ -5,7 +5,7 @@
     "displayName": "MMD",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/mmd-high-resolution-logo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -23,8 +23,11 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.solanajuneil.Pratice1",
-       "googleServicesFile": "./google-services.json"
-
+       "googleServicesFile": "./google-services.json",
+       "permissions": [
+        "ACCESS_NETWORK_STATE",
+        "INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",

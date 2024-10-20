@@ -233,7 +233,7 @@ const takenOnData = reminders.filter(medication => medication.takenOn.length > 0
             <Text style={styles.pillTime}>{eveningCount }</Text>
             </View>
         </View> */}
-      </View>
+    </View>
   </Screen>
   )
 }

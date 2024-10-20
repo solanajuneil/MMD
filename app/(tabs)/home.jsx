@@ -20,6 +20,7 @@ import { pressOnIntake, setIntakesForToday } from '../../actions/intakes';
 import { getFromSecureStore, saveToSecureStore } from '../../api/secureStore';
 import { registerForPushNotificationsAsync } from '../../api/pushNotification';
 import ProfileIcon from '../../assets/icons/SettingIcon';
+import DeviceIcon from '../../assets/icons/DeviceIcon';
 
 
 const home = () => {
@@ -43,45 +44,41 @@ const home = () => {
     : [];
   
   
-  useEffect(() => {
-  const intervalId = setInterval(() => {
-    checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
-  }, 23 * 60 * 60 * 1000); 
-    
-  return () => clearInterval(intervalId);
-}, [intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn]);
-
-// useEffect(() => {
-//   const calculateTimeUntilNext11PM = () => {
-//     const now = new Date();
-//     const next11PM = new Date();
-//     next11PM.setHours(23, 0, 0, 0); // Set time to 11:00 PM today
-
-//     if (now > next11PM) {
-//       next11PM.setDate(next11PM.getDate() + 1);
-//     }
-
-//     return next11PM - now; // Time in milliseconds until next 11:00 PM
-//   };
-
-//   
-//   const initialTimeout = setTimeout(() => {
-//    
+//   useEffect(() => {
+//   const intervalId = setInterval(() => {
 //     checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
-
-//
-//     const intervalId = setInterval(() => {
-//       checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
-//     }, 24 * 60 * 60 * 1000); 
-
-//    
-//     return () => clearInterval(intervalId);
-//   }, calculateTimeUntilNext11PM());
-
-//   
-//   return () => clearTimeout(initialTimeout);
+//   }, 23 * 60 * 60 * 1000); 
+    
+//   return () => clearInterval(intervalId);
 // }, [intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn]);
 
+useEffect(() => {
+  const calculateTimeUntilNext11PM = () => {
+    const now = new Date();
+    const next11PM = new Date();
+    next11PM.setHours(23, 0, 0, 0); // Set time to 11:00 PM today
+
+    if (now > next11PM) {
+      next11PM.setDate(next11PM.getDate() + 1);
+    }
+
+    return next11PM - now; // Time in milliseconds until next 11:00 PM
+  };
+
+  const initialTimeout = setTimeout(() => {   
+    checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
+
+    const intervalId = setInterval(() => {
+      checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
+    }, 24 * 60 * 60 * 1000); 
+   
+    return () => clearInterval(intervalId);
+  }, calculateTimeUntilNext11PM());
+  
+  return () => clearTimeout(initialTimeout);
+}, [intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn]);
+
+  
   useEffect(() => {
     const onSuccess = (userData) => dispatch(setUserData(userData))
     const showAlert = () => {
@@ -135,8 +132,8 @@ useEffect(() => {
     bootstrapAsync();
     
     // **** REMOVE COMMENTS FOR DEBUGGING ****
-    //  Notifications.cancelAllScheduledNotificationsAsync().then(response => console.log(response))
-  //  Notifications.getAllScheduledNotificationsAsync().then(response => console.log(response));
+    // Notifications.cancelAllScheduledNotificationsAsync().then(response => console.log(response))
+    // Notifications.getAllScheduledNotificationsAsync().then(response => console.log(response));
 
     return () => {
       Notifications.removeNotificationSubscription(responseListener.current);
@@ -213,6 +210,14 @@ useEffect(() => {
                         <ProfileIcon/>
                         <Text style={[styles.menuItem, styles.changeBottomSpace]} >My Profile</Text>
                       </View>
+                      </TouchableOpacity> 
+
+
+                      <TouchableOpacity onPress={() => { router.push('connectDevice'); toggleDrawer(); }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <DeviceIcon/>
+                          <Text style={[styles.menuItem, styles.changeBottomSpace]}  >Connect Device</Text>
+                        </View>
                       </TouchableOpacity> 
 
                       <TouchableOpacity onPress={handleLogout}>
@@ -305,8 +310,8 @@ const styles = StyleSheet.create({
   drawerRightContainer: {
     position: 'absolute',
     right: 0,
-    width: width * 0.75,
-    height: height * 0.24,
+    width: width * 0.65,
+    height: height * 0.32,
     backgroundColor: '#fff',
     borderTopLeftRadius: 15,
     borderBottomLeftRadius: 15,

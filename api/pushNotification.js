@@ -1,7 +1,7 @@
-import Constants from "expo-constants"
 import * as Notifications from "expo-notifications"
 import { Platform, Alert } from "react-native"
 import { getWeekdayNumber } from "../utils/getWeekdayNumber";
+import * as Device from "expo-device";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -13,7 +13,7 @@ Notifications.setNotificationHandler({
 
 export const registerForPushNotificationsAsync = async () => {
   let token;
-  if (Constants.isDevice) {
+  if (Device.isDevice) {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== "granted") {

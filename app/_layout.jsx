@@ -31,6 +31,7 @@ const MainLayout = () => {
           <Stack.Screen name='addMedicineScreen' options={{ headerShown: false }}/>
           <Stack.Screen name="medicineDetailsScreen" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
+          <Stack.Screen name="connectDevice" options={{ headerShown: false }} />
     </Stack>
   )
        
