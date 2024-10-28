@@ -1,11 +1,10 @@
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut} from "firebase/auth";
 import { createContext, useState, useEffect, useContext } from "react";
 import { FIREBASE_AUTH, FIREBASE_DB } from "../firebaseConfig";
 import { doc, getDoc, updateDoc, setDoc } from "@firebase/firestore";
 import { Alert } from "react-native";
 import * as Notifications from 'expo-notifications'
 import { scheduleNotification, cancelSingleNotification } from "../api/pushNotification";
-
 export const AuthContext = createContext()
 
 export const AuthContextProvider = ({ children }) => {
@@ -13,7 +12,7 @@ export const AuthContextProvider = ({ children }) => {
     const currentUser = auth.currentUser
     const [user, setUser] = useState(null)
     const [isAuthenticated, setIsAuthenticated] = useState(undefined)
-  
+   
 
      useEffect(() => {
         let unsub;
@@ -127,81 +126,7 @@ export const AuthContextProvider = ({ children }) => {
             onErrorHandler()
         }
     }
-
-    const checkMissDose = async (intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn) => {
-        const parseTime = (timeStr, dateStr) => {
-            const [hoursAndMinutes, period] = timeStr.split(" ");
-            let [hours, minutes] = hoursAndMinutes.split(":").map(Number);
-            if (period === "PM" && hours !== 12) {
-                hours += 12;
-            } else if (period === "AM" && hours === 12) {
-                hours = 0;
-            }
-            const [month, day, year] = dateStr.split("/").map(Number);
-            return new Date(year, month - 1, day, hours, minutes);
-        };
-
-        const checkIntakeStatus = (time, date) => {
-            if (!intakesForTodayTakenOn || !Array.isArray(intakesForTodayTakenOn)) return;
-
-            const takenEntries = intakesForTodayTakenOn.flat();
-            const sameDayEntries = takenEntries.filter((entry) => entry.date === date);
-
-            const scheduledTime = parseTime(time, date);
-            const fiveMinutesBefore = new Date(scheduledTime.getTime() - 5 * 60 * 1000);
-            const fiveMinutesAfter = new Date(scheduledTime.getTime() + 5 * 60 * 1000);
-
-            const taken = sameDayEntries.some((entry) => {
-                const takenTime = parseTime(entry.time, entry.date);
-                return takenTime >= fiveMinutesBefore && takenTime <= fiveMinutesAfter;
-            });
-
-            return taken ? `Medication taken at ${time} on ${date}` : `Missed dose at ${time}`;
-        };
-
-    const sendNotification = async (title, message) => {
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: title,
-                body: message,
-                sound: true,
-            },
-            trigger: null, 
-        });
-    };
-
-
-        const currentDate = new Date();
-        const formattedDate = currentDate.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric"
-        });
-
-        if (formattedDate === intakesForTodayDate && Array.isArray(intakesForTodayTime)) {
-            const intakeStatus = Array.isArray(intakesForTodayTime) 
-            ? intakesForTodayTime.map((time) => checkIntakeStatus(time, intakesForTodayDate)) 
-            : [];
-           
-             const missedDoses = intakeStatus.filter(status => status.includes('Missed dose'));
-            const successfulIntakes = intakeStatus.filter(status => status.includes('Medication taken'));
-
-
-            if (missedDoses.length > 0) {
-                 const missedDosesMessage = missedDoses.join('\n')
-                    await sendNotification("Missed Medication Dose", missedDosesMessage);
-                
-            }
-
-            if (successfulIntakes.length > 0) {
-                const successfulIntakeMessage = successfulIntakes.join('\n')
-                    await sendNotification("Medication Successfully Taken", successfulIntakeMessage);
-                
-            }
-            
-        }
-    };
-
+    
     const editMedicine = async (editMedicine = {}, onSuccessHandler = () => { }, onErrorHandler = () => { }) => {
         try {
             const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
@@ -211,10 +136,10 @@ export const AuthContextProvider = ({ children }) => {
             const validNotifications = notificationIds.map(id => allNotifications.find(notification => notification.identifier === id))
             .filter(notification => notification !== undefined);
 
-          
+            
             if (validNotifications.length > 0) {
-            validNotifications.forEach((notificationToEdit) => {
-                cancelSingleNotification(notificationToEdit.identifier);
+            validNotifications.forEach( async (notificationToEdit) => {
+                await cancelSingleNotification(notificationToEdit.identifier);
             });
             }
            
@@ -277,17 +202,19 @@ export const AuthContextProvider = ({ children }) => {
 
 
     const signOutUser = async () => {
-        try {
-            await signOut(FIREBASE_AUTH)
-        } catch(error) {
-            console.log(error.message)
-            Alert.alert("Something went wrong")
-        }
+            try {
+            await signOut(FIREBASE_AUTH); 
+            } catch (error) {
+            console.log(error.message);
+            Alert.alert('Something went wrong');
+            } finally {
+            setLoading(false); 
+            }
     }
 
 
 return (
-    <AuthContext.Provider value={{ user, isAuthenticated, getUser, addMedicine, signOutUser, takeMedicine, editMedicine, deleteMedicine, checkMissDose }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, getUser, addMedicine, signOutUser, takeMedicine, editMedicine, deleteMedicine}}>
         {children}
     </AuthContext.Provider>
 

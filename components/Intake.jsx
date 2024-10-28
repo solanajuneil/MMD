@@ -10,12 +10,12 @@ import { takeNewMedicine } from '../actions/user'
 import { pressOnIntake } from '../actions/intakes'
 import CustomText from './CustomText'
 import { useAuth } from '../context/authContext'
-
+import { checkRefill } from '../api/pushNotification'
 
 
 
 const PressedIntake = ({ id, name, amount, dose, reminders, setTaken }) => {
-    const { takeMedicine  } = useAuth()
+    const { takeMedicine } = useAuth()
     const router = useRouter()
     const dispatch = useDispatch()
     const calendar = useSelector((state) => state.calendar)
@@ -36,6 +36,7 @@ const PressedIntake = ({ id, name, amount, dose, reminders, setTaken }) => {
 
     const setTakenStates = () => {
         setTaken(true)
+        checkRefill(name, amount)
         dispatch(takeNewMedicine(id))
     }
 
@@ -132,18 +133,13 @@ const Intake = ({ id, takenOn, name, amount, dose, reminder, reminderDays, notif
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
     }
 
-    // const isAlreadyTaken = (intakeId, takenOnArray) => {
-    //   if (!intakeId || !takenOnArray) {
-    //     return false;
-    //   }
-    //   return takenOnArray?.find(date => date === calendar?.selectedDay?.date?.toLocaleDateString("en-US"))
-    // }
+
 
       const isAlreadyTaken = (intakeId, takenOnArray) => {
       if (!intakeId || !takenOnArray) {
         return false;
           }
-        const selectedDate =  calendar?.selectedDay?.date?.toLocaleDateString("en-US")
+        const selectedDate = calendar?.selectedDay?.date?.toLocaleDateString("en-US")
       return takenOnArray?.some(entry => entry.date === selectedDate)
     }
 

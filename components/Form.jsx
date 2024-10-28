@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { ScrollView, TouchableOpacity, ActivityIndicator, Alert, View, StyleSheet, Platform } from "react-native"
+import { ScrollView, TouchableOpacity, ActivityIndicator, Alert, View, StyleSheet, Platform, Text } from "react-native"
 import { format } from "date-fns"
 import { enUS } from "date-fns/locale"
 import CustomInput from "./CustomInput"
@@ -30,13 +30,20 @@ const Form = ({ type = "Add" }) => {
   const { addMedicine, editMedicine, deleteMedicine } = useAuth()
   const dispatch = useDispatch()
   const { pressedIntake } = useSelector((state) => state.intakes)
+  const user = useSelector((state) => state.user)
+  const reminders = user?.reminders || [];
+  const [error, setError] = useState('');
+  const [isDuplicate, setIsDuplicate] = useState(false)
+
+
   const initialState = useMemo(() => {
     return type === "Add" ? initialAddState : pressedIntake
   }, [])
   const [formState, setFormState] = useState(initialState)
   const [buttonDisabled, setButtonDisabled] = useState(true)
   const [datePickerVisible, setDatePickerVisible] = useState(false)
-  
+
+
   useEffect(() => {
     const comparedValues = []
     const emptyValues = []
@@ -110,20 +117,52 @@ const Form = ({ type = "Add" }) => {
     setFormState({...formState, reminderDays: formState.reminderDays.concat(day)})
   }
 
+  const handleChange = (amount) => {
+    const numericAmount = amount.replace(/[^0-9]/g, '');
+
+    if (numericAmount === '' || parseInt(numericAmount) <= 4) {
+      setFormState({ ...formState, amount: numericAmount });
+      setError(''); 
+    } else {
+      setError('Quantity cannot exceed 4 pills'); 
+    }
+  };
+
+  const handleNameChange = (name) => {
+    setFormState((prevState) => ({
+      ...prevState,
+      name,
+    }));
+    const normalizedName = name.trim().toLowerCase();
+    const hasDuplicate = reminders.some(
+      (reminder) => reminder.name.trim().toLowerCase() === normalizedName
+    );
+
+    setIsDuplicate(hasDuplicate); 
+  };
+
+
+
   return (
     <ScrollView style={{width: "100%"}} contentContainerStyle={{paddingHorizontal: 25}} bounces={false} showsVerticalScrollIndicator={false}>
       <CustomText className="font-medium" style={styles.inputLabel}>
-        Name * (e.g Ibuprofen)
+        Name<Text style={styles.asterisk}>*</Text> (e.g Ibuprofen)
       </CustomText>
       <CustomInput
-        containerStyle={styles.inputContainer}
-        onChangeText={(name) => setFormState({ ...formState, name })}
+        containerStyle={[
+          styles.inputContainer,
+          isDuplicate && styles.inputError, 
+        ]}
+        onChangeText={handleNameChange}
         value={formState.name}
         placeholder="Name"
         autoCorrect={false}
       />
+       {isDuplicate && (
+        <Text style={styles.errorText}>This name is already in use.</Text>
+      )}
       <CustomText className="font-medium" style={styles.inputLabel}>
-        Dose* (e.g. 100mg)
+        Dose<Text style={styles.asterisk}>*</Text> (e.g. 100mg)
       </CustomText>
       <CustomInput
         containerStyle={styles.inputContainer}
@@ -133,22 +172,22 @@ const Form = ({ type = "Add" }) => {
         autoCorrect={false}
       />
       <CustomText className="font-medium" style={styles.inputLabel}>
-        Quantity* (e.g 3)
+        Quantity<Text style={styles.asterisk}>*</Text> (e.g 3)
       </CustomText>
       <CustomInput
         containerStyle={styles.inputContainer}
-        onChangeText={(amount) => {
-         const numericAmount = amount.replace(/[^0-9]/g, '')
-          if (numericAmount === '' || parseInt(numericAmount) <= 4) {
-            setFormState({ ...formState, amount: numericAmount });
-          }
-        }}
+        style={[
+          styles.inputContainer,
+          error ? styles.inputError : null, 
+        ]}
+        onChangeText={handleChange}
         value={formState.amount}
         placeholder="Amount"
         keyboardType="numeric"
       />
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <CustomText className="font-medium" style={styles.inputLabel}>
-        Set Time*
+        Set Time<Text style={styles.asterisk}>*</Text>
       </CustomText>
       {
         formState.reminder ? (
@@ -176,7 +215,7 @@ const Form = ({ type = "Add" }) => {
         />
       
       <CustomText className="font-medium" style={styles.inputLabel}>
-        Set Day*
+        Set Day<Text style={styles.asterisk}>*</Text>
       </CustomText>
       <View style={{marginBottom: 30}}>
         {MEDICINE_DAYS.map((day) => {
@@ -321,6 +360,22 @@ const styles =  StyleSheet.create({
       color: "#96A5BA",
       fontFamily:"regular",
       fontSize: 16,
+    },
+    inputError: {
+      borderColor: 'red', 
+    },
+    errorText: {
+      paddingTop: 0,
+      marginTop: 0,
+      marginBottom: 15,
+      color: 'red',
+      fontSize: 14,
+    },
+    asterisk: {
+      color: 'red', 
+      fontSize: 17,
+      margin: 0,
+      padding: 0,
     },
   });
 

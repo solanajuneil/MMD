@@ -8,7 +8,6 @@ import Calendar from '../../components/Calendar';
 import Screen from '../../components/Screen'
 import MenuIcon from '../../assets/icons/MenuIcon';
 import LogoutIcon from '../../assets/icons/LogoutRightIcon';
-import CustomText from '../../components/CustomText';
 import * as Notifications from "expo-notifications"
 import { FAB } from 'react-native-elements';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp  } from "react-native-responsive-screen";
@@ -21,12 +20,14 @@ import { getFromSecureStore, saveToSecureStore } from '../../api/secureStore';
 import { registerForPushNotificationsAsync } from '../../api/pushNotification';
 import ProfileIcon from '../../assets/icons/SettingIcon';
 import DeviceIcon from '../../assets/icons/DeviceIcon';
+import { checkWeekly } from '../../api/pushNotification';
+import { checkMissDose } from '../../api/pushNotification';
 
 
 const home = () => {
-  const { getUser, signOutUser, checkMissDose } = useAuth()
+  const { getUser, signOutUser} = useAuth()
   const [token, setToken] = useState("")
-  const responseListener = useRef()
+  const responseListener = useRef();
   const dispatch = useDispatch()
   const user = useSelector((state) => state.user)
   const calendar = useSelector((state) => state.calendar)
@@ -43,27 +44,25 @@ const home = () => {
     ? intakes.intakesForToday.map((takenMedication) => takenMedication.takenOn) 
     : [];
   
-  
-//   useEffect(() => {
-//   const intervalId = setInterval(() => {
-//     checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
-//   }, 23 * 60 * 60 * 1000); 
-    
-//   return () => clearInterval(intervalId);
-// }, [intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn]);
+  useEffect(() => {
+  const intervalId = setInterval(() => {
+    checkWeekly();
+  }, 7 * 24 * 60 * 60 * 1000);
 
+  return () => clearInterval(intervalId); 
+}, []);
+  
 useEffect(() => {
   const calculateTimeUntilNext11PM = () => {
     const now = new Date();
-    const next11PM = new Date();
-    next11PM.setHours(23, 0, 0, 0); // Set time to 11:00 PM today
+     const next9PM = new Date();
+      next9PM.setHours(21, 0, 0, 0); 
 
-    if (now > next11PM) {
-      next11PM.setDate(next11PM.getDate() + 1);
-    }
-
-    return next11PM - now; // Time in milliseconds until next 11:00 PM
-  };
+      if (now > next9PM) {
+        next9PM.setDate(next9PM.getDate() + 1);
+      }
+      return next9PM - now; 
+    };;
 
   const initialTimeout = setTimeout(() => {   
     checkMissDose(intakesForTodayTime, intakesForTodayDate, intakesForTodayTakenOn);
@@ -114,30 +113,37 @@ useEffect(() => {
 }, [intakesForTodayTakenOn]);
 
 
-
-
-useEffect(() => {
+ useEffect(() => {
     const bootstrapAsync = async () => {
-      let deviceToken = await getFromSecureStore("deviceToken");
-      if (deviceToken) {
-        return setToken(deviceToken);
+      try {
+        let deviceToken = await getFromSecureStore("deviceToken");
+        if (deviceToken) {
+          return setToken(deviceToken);
+        }
+
+        const token = await registerForPushNotificationsAsync();
+        await saveToSecureStore("deviceToken", token);
+        setToken(token);
+      } catch (error) {
+        console.error("Error during bootstrapAsync:", error);
       }
-     
-      registerForPushNotificationsAsync().then((token) => {
-        saveToSecureStore("deviceToken", token);
-        setToken(deviceToken);
-      });
     };
 
     bootstrapAsync();
-    
+
     // **** REMOVE COMMENTS FOR DEBUGGING ****
-    // Notifications.cancelAllScheduledNotificationsAsync().then(response => console.log(response))
+    // Notifications.cancelAllScheduledNotificationsAsync().then(response => console.log(response));
     // Notifications.getAllScheduledNotificationsAsync().then(response => console.log(response));
 
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
     return () => {
-      Notifications.removeNotificationSubscription(responseListener.current);
-    }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
   }, []);
 
     const handleLogout = async () => { 
@@ -180,8 +186,6 @@ useEffect(() => {
       <View style={styles.mainContainer}>
         <Text>Today</Text>
           
-            {/* <TouchableOpacity onPress={()=>router.push('profile')}>
-              </TouchableOpacity> */}
             <View style={styles.userAvatar}>
               <TouchableOpacity onPress={toggleDrawer}>
                       <MenuIcon/>

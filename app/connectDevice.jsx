@@ -1,9 +1,9 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StyleSheet, Text, View, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native'
 import { CustomText } from '../components'
 import ArrowLeftIcon from '../assets/icons/ArrowLeftIcon'
 import { getAuth } from 'firebase/auth'
 import { FIREBASE_RB } from '../firebaseConfig'
-import { getDoc, updateDoc } from '@firebase/firestore'
 import { useState, useEffect } from 'react'
 import { ref, set, get} from 'firebase/database'
 import {useRouter} from 'expo-router';
@@ -14,19 +14,67 @@ const DeviceBound = () => {
   const auth = getAuth()
   const currentUser = auth.currentUser
   const [password, setPassword] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [actionType, setActionType] = useState(null)
-
+  const [inputDeviceId, setInputDeviceId] = useState(''); // Track user input
+  const [isDeviceIdValid, setDeviceIdValid] = useState(false); // Control button visibility
+  const deviceIdsArray = ["CCRT32", "BWTRS1", "XYZ123"];
   const PASSWORD = 'password_123';
+ 
+
+
+ useEffect(() => {
+    const loadStoredData = async () => {
+      try {
+        const storedStatus = await AsyncStorage.getItem('deviceIdValid');
+        if (storedStatus === 'true') {
+          setDeviceIdValid(true); // Set validity status
+        }
+
+        const savedDeviceId = await AsyncStorage.getItem('inputDeviceId');
+        if (savedDeviceId) {
+          setInputDeviceId(savedDeviceId); // Set saved inputDeviceId if found
+        }
+        const savedConnectionStatus = await AsyncStorage.getItem('isConnected');
+        if (savedConnectionStatus === 'true') {
+          setIsConnected(true); // Restore the connection state
+        }
+      } catch (error) {
+        console.error('Error loading stored data:', error);
+      }
+    };
+
+    loadStoredData();
+  }, []);
+
+const validateDeviceId = async () => {
+    if (deviceIdsArray.includes(inputDeviceId)) {
+      setDeviceIdValid(true);
+      setIsConnected(false);
+
+      try {
+        await AsyncStorage.setItem('inputDeviceId', inputDeviceId); // Save valid device ID
+        await AsyncStorage.setItem('deviceIdValid', 'true'); // Save validity status
+      } catch (error) {
+        console.error('Error saving data:', error);
+        Alert.alert('Error', 'Failed to save device ID.');
+        return;
+      }
+
+      Alert.alert('Success', `Connected to Device ID: ${inputDeviceId}`);
+    } else {
+      Alert.alert('Error', 'Invalid Device ID. Please try again.');
+    }
+  };
+
   
 const sendDataToFirebase = async () => {
     try {
-      const deviceRef = ref(FIREBASE_RB, 'esp8266/data');  // Ensure FIREBASE_DB is initialized with getDatabase()
+      const deviceRef = ref(FIREBASE_RB, `esp8266/${inputDeviceId}/data`);  // Ensure FIREBASE_DB is initialized with getDatabase()
 
       // Check if the device is already connected
       const snapshot = await get(deviceRef);
       const data = snapshot.exists() ? snapshot.val() : null;
-
       if (data && data.deviceConnected) {
           if (data.user === currentUser.uid) {
             Alert.alert('Device Status', 'You are already connected.');
@@ -52,9 +100,11 @@ const sendDataToFirebase = async () => {
       };
 
       // Set data to Firebase
-      await set(deviceRef, jsonData);
+     if (deviceIdsArray.includes(inputDeviceId)) await set(deviceRef, jsonData);
       console.log('Data sent to Firebase');
       Alert.alert('Success', 'Device connected successfully!');
+      setIsConnected(true); // Update connection state
+      await AsyncStorage.setItem('isConnected', 'true');
     } catch (error) {
       console.error('Error sending data:', error);
       Alert.alert('Error', 'Failed to send data to Firebase');
@@ -63,12 +113,34 @@ const sendDataToFirebase = async () => {
 
 const disconnectDevice = async () => {
   try {
-    await set(ref(FIREBASE_RB, 'esp8266/data'), { deviceConnected: false });
-    alert('Device disconnected!');
+    if (deviceIdsArray.includes(inputDeviceId)) await set(ref(FIREBASE_RB, `esp8266/${inputDeviceId}/data`), { deviceConnected: false });
+    await AsyncStorage.setItem('deviceIdValid', 'false');
+    await AsyncStorage.setItem('isConnected', 'false');
+    setIsConnected(false); // Update connection state
+    handleDisconnect()
   } catch (error) {
     console.error('Error disconnecting from device:', error);
   }
 };
+  
+  const handleDisconnect = async () => { 
+     Alert.alert(
+      'Device disconnected!', // Alert title
+      'Would you like to go back?', // Alert message
+      [
+        {
+          text: 'Yes',
+          onPress: () => {
+            back()// Navigate back on 'Yes'
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel', // Optional cancel button
+        },
+      ]
+    );
+  }
   
 function formatDateTime(timestamp) {
   // Create a new Date object from the timestamp
@@ -119,23 +191,34 @@ return (
 
         <View style={styles.container}>
             <Text style={styles.header}>Set Alarm into the Device</Text>
+              {!isDeviceIdValid && (
+                <>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter Device ID"
+                    value={inputDeviceId}
+                    onChangeText={setInputDeviceId}
+                  />
 
-            {/* Connect Button - No Password Required */}
-            <TouchableOpacity 
-                style={styles.connectButton} 
-                onPress={sendDataToFirebase} // Directly calls without password
-            >
-                <Text style={styles.buttonText}>Connect to ESP8266</Text>
-            </TouchableOpacity>
+                  <TouchableOpacity style={styles.connectButton} onPress={validateDeviceId}>
+                    <Text style={styles.buttonText}>Validate Device ID</Text>
+                  </TouchableOpacity>
+                </>
+              )}
 
-            {/* Disconnect Button - Requires Password */}
-            <TouchableOpacity 
-                style={styles.disconnectButton} 
-                onPress={showPasswordModal} // Show password modal
-            >
-                <Text style={styles.buttonText}>Disconnect from ESP8266</Text>
-            </TouchableOpacity>
+              {/* Connect and Disconnect Buttons if Device ID is valid */}
+              {isDeviceIdValid && (
+                <>
+                  <TouchableOpacity style={styles.connectButton} onPress={sendDataToFirebase}>
+                    <Text style={styles.buttonText}>Connect to ESP8266</Text>
+                  </TouchableOpacity>
 
+                  <TouchableOpacity style={[styles.disconnectButton, !isConnected && styles.disabledButton]} onPress={showPasswordModal}  disabled={!isConnected}>
+                    <Text style={styles.buttonText}>Disconnect from ESP8266</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              
             {/* Password Modal */}
             <Modal visible={isModalVisible} transparent animationType="slide">
                 <View style={styles.modalContainer}>
@@ -256,6 +339,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 15,
     marginTop: 10,
+  },
+   disabledButton: {
+    backgroundColor: '#b0b0b0', // Dimmed color when disabled
   },
 });
 

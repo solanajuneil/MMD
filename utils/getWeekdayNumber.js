@@ -5,7 +5,7 @@ export const getWeekdayNumber = (weekdayString) => {
 
     switch (weekdayString) {
       case "Sun":
-      return 0; 
+        return 0; 
       case "Mon":
         return 1;
       case "Tue":
